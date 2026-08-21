@@ -1,5 +1,13 @@
+import os
+from dotenv import load_dotenv
 from sqlmodel import create_engine, Session
-DATABASE_URL = "mysql+pymysql://root:@localhost:3307/tripma_db"
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 def get_session():
