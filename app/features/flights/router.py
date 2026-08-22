@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
 
-from app.core.config import get_session
-from app.models.flight import Flight, FlightCreate, FlightRead, FlightUpdate
+from app.db.session import get_session
+from app.features.flights.models import Flight
+from app.features.flights.schemas import FlightCreate, FlightRead, FlightUpdate
 
 router = APIRouter(
     prefix="/flights",
