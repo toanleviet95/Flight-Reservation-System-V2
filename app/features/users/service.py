@@ -1,24 +1,36 @@
-"""UserService — business-logic layer for users."""
-
-from fastapi import HTTPException, status
+# Chứa logic nghiệp vụ
+from fastapi import HTTPException
 from sqlmodel import Session
+from passlib.context import CryptContext
 
-from app.features.users.repository import UserRepository
-from app.features.users.models import User
+from .models import User
+from .schemas import UserCreate, UserLogin
+from . import repository
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class UserService:
-    def __init__(self, session: Session) -> None:
-        self.repo = UserRepository(session)
+def password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
-    def get_user(self, user_id: int) -> User:
-        user = self.repo.get_by_id(user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User {user_id} not found",
-            )
-        return user
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
 
-    def list_users(self, offset: int = 0, limit: int = 100) -> list[User]:
-        return self.repo.get_all(offset=offset, limit=limit)
+def register_user(session: Session, user_in: UserCreate) -> User:
+    if repository.get_by_email(session, user_in.email):
+        raise HTTPException(status_code=409, detail="Email already exists")
+
+    user = User(
+        full_name=user_in.fullname,
+        email=user_in.email,
+        password_hash=password_hash(user_in.password),
+        phone=user_in.phone,
+        auth_provider=user_in.authprovider
+    )
+
+    return repository.create_user(session, user)
+
+def authenticate_user(session: Session, credentials: UserLogin) -> User:
+    user = repository.get_by_email(session, credentials.email)
+    if not user or not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user
