@@ -1,25 +1,30 @@
-"""User request/response schemas."""
+# Định nghĩa hình dạng dữ liệu vào/ra API (Pydantic)
 
-from sqlmodel import SQLModel, Field
-
-
-class UserBase(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
-    email: str = Field(max_length=255)
-    is_active: bool = True
-    is_superuser: bool = False
+from pydantic import BaseModel, ConfigDict
 
 
-class UserCreate(UserBase):
+# --- Request schemas ---
+
+class UserCreate(BaseModel):
+    """Schema nhận dữ liệu từ client khi đăng ký."""
+    fullname: str
+    email: str
+    password: str
+    phone: str
+    authprovider: str
+
+class UserLogin(BaseModel):
+    """Schema nhận dữ liệu từ client khi đăng nhập."""
+    email: str
     password: str
 
 
-class UserRead(UserBase):
+# --- Response schemas ---
+
+class UserRead(BaseModel):
+    """Schema trả về cho client — không lộ passwordhash."""
     user_id: int
+    full_name: str
+    email: str
 
-
-class UserUpdate(SQLModel):
-    full_name: str | None = None
-    email: str | None = None
-    password: str | None = None
-    is_active: bool | None = None
+    model_config = ConfigDict(from_attributes=True)
